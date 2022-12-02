@@ -2,7 +2,8 @@ import requests
 import json
 import os
 from dotenv import load_dotenv
-from flask import Flask, redirect, render_template, request, Response, jsonify
+from flask import Flask, redirect, render_template, request, Response, jsonify, session
+from flask.ext.session import Session
 
 
 dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
@@ -10,10 +11,9 @@ if os.path.exists(dotenv_path):
     load_dotenv(dotenv_path)
 
 token = os.environ['SSO_TOKEN']
-
-
+url = os.environ['SSO_SERVER_URL']
 app = Flask(__name__)
-url = "http://agroportal.track.uz"
+Session(app)
 
 
 @app.route("/")
@@ -24,8 +24,7 @@ def home():
 @app.route("/login")
 def login():
     auth_token = request_sso_authorization_request()
-    print(auth_token)
-    # TODO write auth token to session
+    session['auth_token'] = auth_token
     if auth_token.startswith('error'):
         return 'error'
     # return render_template('home.html', token=token)
@@ -40,7 +39,7 @@ def logout():
 @app.route("/sso/accept/")
 def sso_accept():
     print('request in accept', request)
-    res = get_sso_authorization_request(sso_token='')
+    res = get_sso_authorization_request(sso_token=session['auth_token'])
     return res
 
 
@@ -51,7 +50,7 @@ def sso_deauthenticate():
 
 @app.route("/sso/event")
 def sso_event():
-    print('!'*50,'request in event endpoint before accept:', request)
+    print('!'*50, 'request in event endpoint before accept:', request)
     if request.method != 'POST':
         return Response(status=405)
 
@@ -130,11 +129,10 @@ def get_sso_authorization_request(sso_token: str) -> dict:
     """
     Get SSO token information from server to check authorization
     """
-    url = "http://agroportal.track.uz"
     try:
         result = requests.post(url + '/sso/get/', {
-            'token': 'client token',
-            'authentication_token': 'auth_token from session'
+            'token': token,
+            'authentication_token': session['auth_token']
         })
 
         if result.status_code != 200:
