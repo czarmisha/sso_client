@@ -13,7 +13,7 @@ token = os.environ['SSO_TOKEN']
 
 
 app = Flask(__name__)
-url = "https://agroportal.track.uz"
+url = "http://agroportal.track.uz"
 
 
 @app.route("/")
