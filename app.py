@@ -28,7 +28,7 @@ def login():
     # TODO write auth token to session
     if auth_token.startswith('error'):
         return 'error'
-    return render_template('home.html', {'token': token})
+    # return render_template('home.html', token=token)
     return redirect(f"{url}/login/?sso={auth_token}")
 
 
@@ -37,9 +37,11 @@ def logout():
     pass
 
 
-@app.route("/sso/accept")
+@app.route("/sso/accept/")
 def sso_accept():
+    print('request in accept', request)
     res = get_sso_authorization_request(sso_token='')
+    return res
 
 
 @app.route("/sso/deauthenticate")
@@ -49,7 +51,7 @@ def sso_deauthenticate():
 
 @app.route("/sso/event")
 def sso_event():
-    print(request)
+    print('!'*50,'request in event endpoint before accept:', request)
     if request.method != 'POST':
         return Response(status=405)
 
