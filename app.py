@@ -1,4 +1,5 @@
-import requests, json
+import requests
+import json
 from flask import Flask, redirect, render_template, request, Response, jsonify
 
 
@@ -12,7 +13,8 @@ def home():
 
 @app.route("/login")
 def login():
-    auth_token = request_sso_authorization_request() 
+    auth_token = request_sso_authorization_request()
+    print(auth_token)
     # write auth token to session
     if not auth_token:
         return 'error'
@@ -49,7 +51,7 @@ def sso_event():
 
     if (
         not data.get('token', '').strip()
-        or data.pop('token') != 'token' # check to == with token from .env
+        or data.pop('token') != 'token'  # check to == with token from .env
     ):
         return jsonify({
             'error': ('Token not provided or incorrect')
@@ -101,7 +103,8 @@ def request_sso_authorization_request():
         })
 
         if result.status_code != 200:
-            raise Exception(f'Некорректный ответ сервера авторизации: STATUS={result.status_code}; TEXT={result.text}')
+            raise Exception(
+                f'Некорректный ответ сервера авторизации: STATUS={result.status_code}; TEXT={result.text}')
 
         result = result.json()
     except Exception as e:
