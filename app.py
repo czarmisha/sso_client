@@ -40,7 +40,15 @@ def logout():
 def sso_accept():
     print('request in accept', request)
     res = get_sso_authorization_request(sso_token=session['auth_token'])
-    return res
+    if 'error' in res:
+        return res['error']
+    if 'authenticated' in res and res['authenticated']==True:
+        session['user'] = res['user_identy']
+    make_used = set_sso_authorization_request_used(sso_token=session['auth_token'])
+    if make_used:
+        return render_template('success.html', user=session['user'])
+    else:
+        return render_template('success.html', error='error')
 
 
 @app.route("/sso/deauthenticate")
@@ -56,13 +64,13 @@ def sso_event():
 
     try:
         data = json.loads(request.body.decode('utf8'))
-        print('!'*66, data)
+        print('!'*66, 'user data', data)
     except:
         return Response(status=400)
 
     if (
         not data.get('token', '').strip()
-        or data.pop('token') != 'token'  # check to == with token from .env
+        or data.pop('token') != token  # check to == with token from .env
     ):
         return jsonify({
             'error': ('Token not provided or incorrect')
@@ -132,7 +140,7 @@ def get_sso_authorization_request(sso_token: str) -> dict:
     try:
         result = requests.post(url + '/sso/get/', {
             'token': token,
-            'authentication_token': session['auth_token']
+            'authentication_token': sso_token
         })
 
         if result.status_code != 200:
@@ -147,3 +155,27 @@ def get_sso_authorization_request(sso_token: str) -> dict:
         return
 
     return result
+
+
+def set_sso_authorization_request_used(sso_token):
+    """
+    For sso_service side. Makes SSO request as used for
+    authentication procedure (not available for next authentications)
+    """
+    try:
+        result = requests.post(url + '/sso/make_used/', {
+            'token': token,
+            'authentication_token': sso_token
+        })
+
+        if result.status_code != 200:
+            raise Exception(
+                f'Некорректный ответ сервера авторизации: STATUS={result.status_code}; TEXT={result.text}'
+            )
+        result = result.json()
+        if result['ok']:
+            return True
+        else:
+            return False
+    except Exception as e:
+        return False
