@@ -1,6 +1,15 @@
 import requests
 import json
+import os
+from dotenv import load_dotenv
 from flask import Flask, redirect, render_template, request, Response, jsonify
+
+
+dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
+if os.path.exists(dotenv_path):
+    load_dotenv(dotenv_path)
+
+token = os.environ['SSO_TOKEN']
 
 
 app = Flask(__name__)
@@ -19,7 +28,7 @@ def login():
     # TODO write auth token to session
     if auth_token.startswith('error'):
         return 'error'
-
+    return render_template('home.html', {'token': token})
     return redirect(f"{url}/login/?sso={auth_token}")
 
 
@@ -97,7 +106,7 @@ def request_sso_authorization_request():
     """
     try:
         result = requests.post(url + '/sso/obtain/', {
-            "token": 'token',
+            "token": token,
             "next_url": '/next_url/',
         })
 
@@ -113,6 +122,7 @@ def request_sso_authorization_request():
         return result['token']
     else:
         return f'error: {result["error"]}'
+
 
 def get_sso_authorization_request(sso_token: str) -> dict:
     """
