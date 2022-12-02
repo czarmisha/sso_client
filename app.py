@@ -23,12 +23,12 @@ def home():
 
 @app.route("/login")
 def login():
+    return render_template('home.html', {'token': token})
     auth_token = request_sso_authorization_request()
     print(auth_token)
     # TODO write auth token to session
     if auth_token.startswith('error'):
         return 'error'
-    return render_template('home.html', {'token': token})
     return redirect(f"{url}/login/?sso={auth_token}")
 
 
