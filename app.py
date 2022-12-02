@@ -116,7 +116,7 @@ def request_sso_authorization_request():
 
         result = result.json()
     except Exception as e:
-        raise Exception('error while request sso/obtain')
+        raise Exception('error while request sso/obtain', e)
 
     if 'token' in result:
         return result['token']
