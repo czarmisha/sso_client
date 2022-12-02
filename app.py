@@ -4,6 +4,7 @@ from flask import Flask, redirect, render_template, request, Response, jsonify
 
 
 app = Flask(__name__)
+url = "http://agroportal.track.uz"
 
 
 @app.route("/")
@@ -15,12 +16,11 @@ def home():
 def login():
     auth_token = request_sso_authorization_request()
     print(auth_token)
-    # write auth token to session
-    if not auth_token:
+    # TODO write auth token to session
+    if auth_token.startswith('error'):
         return 'error'
 
-    return redirect(f"http://sso_server.test/login/?sso={auth_token}")
-    # return render_template('home.html')
+    return redirect(f"{url}/login/?sso={auth_token}")
 
 
 @app.route("/logout")
@@ -30,7 +30,7 @@ def logout():
 
 @app.route("/sso/accept")
 def sso_accept():
-    pass
+    res = get_sso_authorization_request(sso_token='')
 
 
 @app.route("/sso/deauthenticate")
@@ -46,6 +46,7 @@ def sso_event():
 
     try:
         data = json.loads(request.body.decode('utf8'))
+        print('!'*66, data)
     except:
         return Response(status=400)
 
@@ -94,8 +95,6 @@ def request_sso_authorization_request():
     Запрашивает токен авторизации на SSO-шлюзе и возвращает его как результат.
     Необходим для дальнейшей авторизации пользователя на шлюзе авторизации
     """
-
-    url = "http://agroportal.track.uz"
     try:
         result = requests.post(url + '/sso/obtain/', {
             "token": 'token',
@@ -108,14 +107,12 @@ def request_sso_authorization_request():
 
         result = result.json()
     except Exception as e:
-        # raise SSOException(e)
-        return None
+        raise Exception('error while request sso/obtain')
 
     if 'token' in result:
         return result['token']
     else:
-        return result['error']
-
+        return f'error: {result["error"]}'
 
 def get_sso_authorization_request(sso_token: str) -> dict:
     """
