@@ -3,7 +3,7 @@ import json
 import os
 from dotenv import load_dotenv
 from flask import Flask, redirect, render_template, request, Response, jsonify, session
-from flask.ext.session import Session
+from flask_session import Session
 
 
 dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
