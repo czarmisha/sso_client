@@ -7,12 +7,13 @@
     <title>Document</title>
 </head>
 <body>
-    {% if error %}
-        {{error}}
-    {% endif %}
-        
+    <h1>Home page</h1>
+    <br><br>
     {% if user %}
-        welcome {{user}}
+        <p>Welcome {{user}}</p>
+        <a href="{{ url_for('login') }}">logout</a>
+    {% else %}
+        <a href="{{ url_for('login') }}">login via agro</a>
     {% endif %}
 </body>
 </html>

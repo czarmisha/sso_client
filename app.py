@@ -1,7 +1,4 @@
-import secrets
-import requests
-import json
-import os
+import requests, json, os
 from dotenv import load_dotenv
 from flask import Flask, redirect, render_template, request, Response, jsonify, session
 from flask_session import Session
@@ -13,11 +10,8 @@ if os.path.exists(dotenv_path):
 
 token = os.environ['SSO_TOKEN']
 url = os.environ['SSO_SERVER_URL']
-#url = "http://agroportal.track.uz"
 app = Flask(__name__)
-#app.secret_key = secrets.token_hex(16)
 app.config.update(SECRET_KEY=os.urandom(24))
-# Check Configuration section for more details
 SESSION_TYPE = 'filesystem'
 app.config.from_object(__name__)
 Session(app)
@@ -32,21 +26,28 @@ def home():
 def login():
     auth_token = request_sso_authorization_request()
     session['auth_token'] = auth_token
-    print('!'*50, auth_token, session)
     if auth_token.startswith('error'):
         return 'error'
-    # return render_template('home.html', token=token)
     return redirect(f"{url}/login/?sso={auth_token}")
 
 
 @app.route("/logout")
 def logout():
-    pass
+    # if not request.user.is_anonymous:
+    try:
+        logout = request_deauthentication(request.user)
+        if logout:
+            del session['user']
+            del session['auth_token']
+        #TODO make logout
+    except Exception as e:
+        return 'error'
+
+    return redirect('/')
 
 
 @app.route("/sso/accept/")
 def sso_accept():
-    print('request in accept', request)
     res = get_sso_authorization_request(sso_token=session['auth_token'])
     if 'error' in res:
         return res['error']
@@ -59,20 +60,19 @@ def sso_accept():
         return render_template('success.html', error='error')
 
 
-@app.route("/sso/deauthenticate")
-def sso_deauthenticate():
-    pass
+# @app.route("/sso/deauthenticate")
+# def sso_deauthenticate():
+#     pass
 
 
 @app.route("/sso/event")
 def sso_event():
-    print('!'*50, 'request in event endpoint before accept:', request)
+    # TODO save user
     if request.method != 'POST':
         return Response(status=405)
 
     try:
         data = json.loads(request.body.decode('utf8'))
-        print('!'*66, 'user data', data)
     except:
         return Response(status=400)
 
@@ -94,26 +94,6 @@ def sso_event():
             return jsonify({'error': ('Incorrect event type name')})
     except:
         pass
-    #     module_name, class_name = getattr(
-    #         settings,
-    #         'SSO_EVENT_ACCEPTOR_CLASS',
-    #         'django_sso.sso_service.backend.EventAcceptor'
-    #     ).rsplit('.', 1)
-
-    #     dispatcher_class = getattr(importlib.import_module(module_name), class_name)
-
-    #     if not hasattr(dispatcher_class, type_name):
-    #         return JsonResponse({'error': f"{_('Event type not supported')} ({type_name})"})
-    #     else:
-    #         try:
-    #             getattr(dispatcher_class(), type_name)(**data)
-    #         except Exception as e:
-    #             return JsonResponse({'error': str(e)})
-
-    #         return JsonResponse({'ok': True})
-
-    # except Exception as e:
-    #     return JsonResponse({'error': str(e)})
 
 
 def request_sso_authorization_request():
@@ -187,3 +167,28 @@ def set_sso_authorization_request_used(sso_token):
             return False
     except Exception as e:
         return False
+
+
+def request_deauthentication(user):
+    """
+    Call SSO sso_gateway to deauthorize user everywhere
+    """
+    # user_model = get_user_model()
+
+    try:
+        result = requests.post(url + '/sso/deauthenticate/', {
+            'token': token,
+            'user_identy': user
+        })
+
+        if result.status_code != 200:
+            raise Exception(f'Некорректный ответ сервера авторизации: STATUS={result.status_code}; TEXT={result.text}')
+
+        result = result.json()
+
+        if 'error' in result:
+            raise Exception(result['error'])
+        if 'ok' in result:
+            return result['ok']
+    except Exception as e:
+        raise Exception(e)
