@@ -1,4 +1,3 @@
-import secrets
 import requests
 import json
 import os
@@ -12,13 +11,11 @@ if os.path.exists(dotenv_path):
     load_dotenv(dotenv_path)
 
 token = os.environ['SSO_TOKEN']
-url = os.environ['SSO_SERVER_URL']
-#url = "http://agroportal.track.uz"
+#url = os.environ['SSO_SERVER_URL']
+url = "http://agroportal.track.uz"
 app = Flask(__name__)
-#app.secret_key = secrets.token_hex(16)
-app.config.update(SECRET_KEY=os.urandom(24))
 # Check Configuration section for more details
-SESSION_TYPE = 'filesystem'
+SESSION_TYPE = 'redis'
 app.config.from_object(__name__)
 Session(app)
 
@@ -32,7 +29,6 @@ def home():
 def login():
     auth_token = request_sso_authorization_request()
     session['auth_token'] = auth_token
-    print('!'*50, auth_token, session)
     if auth_token.startswith('error'):
         return 'error'
     # return render_template('home.html', token=token)
