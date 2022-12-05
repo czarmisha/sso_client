@@ -41,7 +41,7 @@ def logout():
             del session['auth_token']
         #TODO make logout
     except Exception as e:
-        return 'error'
+        return render_template('error.html', error=e)
 
     return redirect('/')
 
@@ -173,8 +173,6 @@ def request_deauthentication(user):
     """
     Call SSO sso_gateway to deauthorize user everywhere
     """
-    # user_model = get_user_model()
-
     try:
         result = requests.post(url + '/sso/deauthenticate/', {
             'token': token,
