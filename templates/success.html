@@ -11,7 +11,7 @@
     <br><br>
     {% if user %}
         <p>Welcome {{user}}</p>
-        <a href="{{ url_for('login') }}">logout</a>
+        <a href="{{ url_for('logout') }}">logout</a>
     {% else %}
         <a href="{{ url_for('login') }}">login via agro</a>
     {% endif %}
