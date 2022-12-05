@@ -35,7 +35,7 @@ def login():
 def logout():
     # if not request.user.is_anonymous:
     try:
-        logout = request_deauthentication(request.user)
+        logout = request_deauthentication(session['user'])
         if logout:
             del session['user']
             del session['auth_token']
